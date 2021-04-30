@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, iter::FromIterator};
 
 // ECEF Vector
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub x: f32,
     pub y: f32,
@@ -36,7 +36,7 @@ impl Position {
         let d = Position::dot(a, b);
         let n = a.len() * b.len();
         let t = f32::acos(d / n);
-        t * 180.0 / PI
+        t
     }
 
     pub fn separation(&self, a: &Position, b: &Position) -> f32 {
@@ -66,5 +66,36 @@ mod test {
         assert_eq!(position.x, 6371.0);
         assert_eq!(position.y, 0.0);
         assert_eq!(position.z, 0.0);
+    }
+
+    #[test]
+    fn test_position_arithmetic() {
+        let p1 = Position::new(2.0, 3.0, 4.0);
+        let p2 = Position::new(3.0, 4.0, 6.0);
+
+        assert_eq!(p2.len(), 7.81025);
+
+        assert_eq!(p2.sub(&p1), Position::new(1.0, 1.0, 2.0));
+
+        assert_eq!(Position::dot(&p1, &p2), 42.0);
+    }
+
+    #[test]
+    fn test_position_angle() {
+        let p1 = Position::new(1.0, 0.0, 0.0);
+        let p2 = Position::new(0.0, 1.0, 0.0);
+        let p3 = Position::new(0.0, 0.0, 1.0);
+
+        let o = Position {
+            x: 1.0,
+            y: 1.0,
+            z: 0.0,
+        };
+
+        assert_eq!(Position::angle(&p1, &p1), 0.0);
+        assert_eq!(Position::angle(&p1, &p2), PI / 2.0);
+        assert_eq!(Position::angle(&p1, &p3), PI / 2.0);
+        assert_eq!(Position::angle(&p1, &p3), PI / 2.0);
+        assert_eq!(o.separation(&p1, &p2), PI / 2.0)
     }
 }
