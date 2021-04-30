@@ -119,6 +119,10 @@ impl fmt::Display for Band {
 }
 
 impl Scenario {
+    pub fn from_str(s: &str) -> Scenario {
+        s.lines().collect()
+    }
+
     pub fn users(&self) -> &Vec<Entity> {
         &self.users
     }
@@ -217,10 +221,8 @@ mod test {
         assert_eq!(position.z, -123.0);
     }
 
-    #[test]
-    fn test_build_scenario() {
-        let scenario = String::from(
-            "# User on the equator at the Prime Meridian, satellite 550km overhead
+    const EXAMPLE_SCENARIO: &str =
+        "# User on the equator at the Prime Meridian, satellite 550km overhead
 user 1 6371 0 0
 sat 1 6921 0 0
 
@@ -231,10 +233,11 @@ sat 2 0 0 6921
 
 # Interferer satellite in GEO at 180 degrees West (opposite the Prime Meridian)
 interferer 1 -42164 0 0
-",
-        );
-        let scenario = scenario.lines();
-        let scenario: Scenario = scenario.collect();
+";
+
+    #[test]
+    fn test_build_scenario() {
+        let scenario = Scenario::from_str(EXAMPLE_SCENARIO);
         assert_eq!(scenario.users.len(), 3);
         assert_eq!(scenario.satellites.len(), 2);
         assert_eq!(scenario.interferers.len(), 1);

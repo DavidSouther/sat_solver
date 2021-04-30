@@ -4,7 +4,7 @@ mod position;
 mod scenario;
 mod solver;
 
-use crate::{scenario::Scenario, solver::optimize};
+use crate::scenario::Scenario;
 
 fn main() {
     let stdin = io::stdin();
@@ -21,6 +21,6 @@ fn main() {
         scenario.interferers().len(),
     );
 
-    optimize(&mut scenario);
+    scenario.optimize();
     println!("{}", scenario);
 }
