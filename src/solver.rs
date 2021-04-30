@@ -1,23 +1,9 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    f32::consts::PI,
-};
+use std::f32::consts::PI;
 
 use crate::{
     position::Position,
     scenario::{Band, Beam, Entity, Satellite, Scenario, BANDS},
 };
-
-// Build a map of User IDs to a Set of satellites it can see. It can see
-// satellites within 45' of its normal.
-fn skymap(scenario: &Scenario) -> BTreeMap<i32, BTreeSet<i32>> {
-    BTreeMap::new()
-}
-
-// Invert the skymap to a map of Satellites to a list of Users it can see
-fn groundmap(skymap: &BTreeMap<i32, BTreeSet<i32>>) -> BTreeMap<i32, Vec<Entity>> {
-    BTreeMap::new()
-}
 
 impl Scenario {
     // For each user, build a set of the satellites it can see.
@@ -27,21 +13,24 @@ impl Scenario {
     //          For each band
     //              For each satellite, add the next user that is in bounds
     pub fn optimize(&mut self) {
-        let no_users: &Vec<Entity> = &Vec::new();
         let interferers = &self.interferers().clone();
-        let skymap = skymap(self);
-        // All users are now owned by groundmap
-        let groundmap = groundmap(&skymap);
+        let mut users = self.users().clone();
         loop {
-            let mut users_added = 0;
+            let start_users = users.len();
             for band in &BANDS {
                 let band = *band;
                 for satellite in self.satellites_mut().iter_mut() {
-                    let users = groundmap.get(&satellite.entity().id()).unwrap_or(no_users);
-                    users_added += satellite.maybe_add_next_user(users, band, interferers);
+                    for index in (0..users.len()).rev() {
+                        let user = users[index];
+                        if satellite.can_accept(&user, band, interferers) {
+                            users.swap_remove(index);
+                            satellite.beams_mut().push(Beam::new(user, band));
+                        }
+                    }
                 }
             }
-            if users_added == 0 {
+            let users_added = start_users - users.len();
+            if users_added == 0 || users.len() == 0 {
                 break;
             }
         }
@@ -49,24 +38,6 @@ impl Scenario {
 }
 
 impl Satellite {
-    pub fn maybe_add_next_user(
-        &mut self,
-        users: &Vec<Entity>,
-        band: Band,
-        interferers: &Vec<Entity>,
-    ) -> i32 {
-        let user = users
-            .iter()
-            .find(|user| self.in_bounds(user, band, interferers));
-        match user {
-            Some(user) => {
-                self.beams_mut().push(Beam::new(*user, band));
-                1
-            }
-            None => 0,
-        }
-    }
-
     pub fn beam_intersection(&self, user: &Entity, band: Band) -> bool {
         self.beams()
             .iter()
@@ -95,7 +66,7 @@ impl Satellite {
             .any(|s| s)
     }
 
-    pub fn in_bounds(&self, user: &Entity, band: Band, interferers: &Vec<Entity>) -> bool {
+    pub fn can_accept(&self, user: &Entity, band: Band, interferers: &Vec<Entity>) -> bool {
         //  32 beams per satellite
         if self.beams().len() >= 32 {
             false
@@ -138,23 +109,6 @@ sat 1 6921 0 0",
     }
 
     #[test]
-    fn test_maybe_add_user() {
-        let mut scenario = Scenario::from_str(
-            "user 1 6371 0 0
-user 2 6371 10 0
-user 3 6371 400 400
-sat 1 6921 0 0",
-        );
-        let users = &scenario.users().clone();
-        let interferers = &Vec::new();
-        let satellite = scenario.satellites_mut().iter_mut().next().unwrap();
-        satellite.maybe_add_next_user(users, Band::A, interferers);
-        satellite.maybe_add_next_user(users, Band::A, interferers);
-        satellite.maybe_add_next_user(users, Band::A, interferers);
-        assert_eq!(scenario.satellites()[0].beams().len(), 2);
-    }
-
-    #[test]
     fn test_optimize() {
         let mut scenario = Scenario::from_str(
             "user 1 6371 0 0
@@ -163,6 +117,13 @@ user 3 6371 400 400
 sat 1 6921 0 0",
         );
         scenario.optimize();
-        assert_eq!(scenario.satellites()[0].beams().len(), 2);
+        assert_eq!(scenario.satellites()[0].beams().len(), 3);
+        let output = format!("{}", scenario);
+        assert_eq!(
+            output,
+            "sat 1 beam 1 user 3 color A
+sat 1 beam 2 user 2 color A
+sat 1 beam 3 user 1 color B"
+        );
     }
 }

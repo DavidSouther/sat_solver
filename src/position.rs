@@ -42,6 +42,27 @@ impl Position {
     pub fn separation(&self, a: &Position, b: &Position) -> f32 {
         Position::angle(&a.sub(self), &b.sub(self))
     }
+
+    pub fn norm(&self) -> Position {
+        let n = self.len();
+        self.scale(1.0 / n)
+    }
+
+    pub fn scale(&self, n: f32) -> Position {
+        Position::new(self.x * n, self.y * n, self.z * n)
+    }
+
+    // Returns true if the target entity is within `angle` of self, looking
+    // along a normal oriented at <0>.
+    pub fn can_see(&self, target: &Position, angle: f32) -> bool {
+        let dx = target.sub(self);
+        let n = self.norm();
+        let d = Position::dot(&dx, &n);
+        let r = d; // TODO calculate r from angle
+        let dr = dx.sub(&n.scale(d)).len();
+        let b = dr < r;
+        b
+    }
 }
 
 impl<'a> FromIterator<&'a str> for Position {
@@ -97,5 +118,17 @@ mod test {
         assert_eq!(Position::angle(&p1, &p3), PI / 2.0);
         assert_eq!(Position::angle(&p1, &p3), PI / 2.0);
         assert_eq!(o.separation(&p1, &p2), PI / 2.0)
+    }
+
+    #[test]
+    fn test_can_see() {
+        let x = Position::new(1.0, 1.0, 0.0);
+        let p1 = Position::new(2.0, 3.0, 0.0);
+        let p2 = Position::new(-2.0, 3.0, 0.0);
+        let p3 = Position::new(-2.0, -3.0, 0.0);
+
+        assert_eq!(x.can_see(&p1, 45.0), true);
+        assert_eq!(x.can_see(&p2, 45.0), false);
+        assert_eq!(x.can_see(&p3, 45.0), false);
     }
 }
