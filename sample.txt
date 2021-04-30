@@ -156,13 +156,18 @@ Running 11_one_hundred_thousand_users.txt
 Reading scenario file ./beam-planning/test_cases/11_one_hundred_thousand_users.txt
 Reading solution from stdin.
 Checking user coverage...
-29.261% of 100000 total users covered.
+29.249000000000002% of 100000 total users covered.
 Checking each user can see their assigned satellite...
-	All users' assigned satellites are visible.
+        All users' assigned satellites are visible.
 Checking no sat interferes with itself...
-	Sat 624 beams 2 and 27 interfere.
-		Beam angle: 0.005501014798818914 degrees.
+        No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+        No satellite interferes with a non-Starlink satellite!
 
+Solution passed all checks!
+
+
+time(1):
 real    1m22.916s
 user    1m23.623s
 sys     0m0.285s

@@ -155,4 +155,32 @@ sat 2 beam 1 user 2 color A
 sat 2 beam 2 user 3 color B"
         );
     }
+
+    #[test]
+    fn test_11_example_beam_interference() {
+        /*
+        Checking no sat interferes with itself...
+        Sat 624 beams 2 and 27 interfere.
+                Beam angle: 0.005501014798818914 degrees.
+        sat 624 beam 2 user 83636 color A
+        sat 624 beam 27 user 21283 color A
+        sat 624 -5111.007144121957 -1334.7360828140702 4471.7252332817225
+        user 83636 -4462.399898375494 -1507.4791341925356 4286.176851267787
+        user 21283 -4462.341423785467 -1507.5185635095902 4286.223546883291
+        */
+        let mut scenario = Scenario::from_str(
+            "sat 624 -5111.007144121957 -1334.7360828140702 4471.7252332817225
+user 83636 -4462.399898375494 -1507.4791341925356 4286.176851267787
+user 21283 -4462.341423785467 -1507.5185635095902 4286.223546883291",
+        );
+
+        let user = scenario.users()[0];
+        scenario.satellites_mut()[0]
+            .beams_mut()
+            .push(Beam::new(user, Band::A));
+        let satellite = &scenario.satellites()[0];
+        let user = &scenario.users()[1];
+        let intersects = satellite.beam_intersection(user, Band::A);
+        assert_eq!(intersects, true);
+    }
 }

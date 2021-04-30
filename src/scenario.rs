@@ -133,10 +133,6 @@ impl Scenario {
         &self.users
     }
 
-    pub fn users_mut(&mut self) -> &mut Vec<Entity> {
-        &mut self.users
-    }
-
     pub fn satellites_mut(&mut self) -> &mut Vec<Satellite> {
         &mut self.satellites
     }

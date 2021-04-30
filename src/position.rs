@@ -35,7 +35,12 @@ impl Position {
     pub fn angle(a: &Position, b: &Position) -> f32 {
         let d = Position::dot(a, b);
         let n = a.len() * b.len();
-        let t = f32::acos(d / n);
+        let r = d / n;
+        // When close to 0, catch possible NaN
+        if (r - 1.0).abs() < 0.01 {
+            return 0.0;
+        }
+        let t = f32::acos(r);
         t
     }
 
@@ -157,5 +162,15 @@ mod test {
         let s4 = Position::new(6921.0, 0.0, 0.0);
         let g4 = Position::new(6350.206256636249, 574.1605965872963, -160.24555276741216);
         assert_eq!(g4.can_see(&s4, 45.0), false);
+    }
+
+    #[test]
+    fn regression_angle() {
+        let s = Position::new(-5111.007144121957, -1334.7360828140702, 4471.7252332817225);
+        let p1 = Position::new(-4462.399898375494, -1507.4791341925356, 4286.176851267787);
+        let p2 = Position::new(-4462.341423785467, -1507.5185635095902, 4286.223546883291);
+
+        let separation = s.separation(&p1, &p2);
+        assert_eq!(separation, 0.0);
     }
 }
