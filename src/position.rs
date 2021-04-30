@@ -55,12 +55,14 @@ impl Position {
     // Returns true if the target entity is within `angle` of self, looking
     // along a normal oriented at <0>.
     pub fn can_see(&self, target: &Position, angle: f32) -> bool {
-        let t = Position::dot(&self.norm(), target);
-        if t <= self.len() {
+        let n = self.norm();
+        let l = self.len();
+        let t = Position::dot(&n, target);
+        if t <= l {
             return false;
         }
-        let dt = self.scale(t);
-        let h = dt.len();
+        let dt = n.scale(t);
+        let h = t - l;
         let x = dt.sub(target).len();
         let r = h * (angle * PI / 180.0).tan();
         x < r
@@ -151,5 +153,9 @@ mod test {
         let s2 = Position::new(6921.0, 0.0, 0.0);
         let g2 = Position::new(111.189278, 0.0, 6370.02978);
         assert_eq!(g2.can_see(&s2, 45.0), false);
+
+        let s4 = Position::new(6921.0, 0.0, 0.0);
+        let g4 = Position::new(6350.206256636249, 574.1605965872963, -160.24555276741216);
+        assert_eq!(g4.can_see(&s4, 45.0), false);
     }
 }

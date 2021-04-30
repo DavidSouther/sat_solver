@@ -1,0 +1,168 @@
+Running 00_example.txt
+Reading scenario file ./beam-planning/test_cases/00_example.txt
+Reading solution from stdin.
+Checking user coverage...
+100.0% of 3 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 01_simplest_possible.txt
+Reading scenario file ./beam-planning/test_cases/01_simplest_possible.txt
+Reading solution from stdin.
+Checking user coverage...
+100.0% of 1 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 02_two_users.txt
+Reading scenario file ./beam-planning/test_cases/02_two_users.txt
+Reading solution from stdin.
+Checking user coverage...
+100.0% of 2 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 03_five_users.txt
+Reading scenario file ./beam-planning/test_cases/03_five_users.txt
+Reading solution from stdin.
+Checking user coverage...
+80.0% of 5 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 04_one_interferer.txt
+Reading scenario file ./beam-planning/test_cases/04_one_interferer.txt
+Reading solution from stdin.
+Checking user coverage...
+0.0% of 1 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 05_equatorial_plane.txt
+Reading scenario file ./beam-planning/test_cases/05_equatorial_plane.txt
+Reading solution from stdin.
+Checking user coverage...
+100.0% of 1000 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 06_partially_fullfillable.txt
+Reading scenario file ./beam-planning/test_cases/06_partially_fullfillable.txt
+Reading solution from stdin.
+Checking user coverage...
+76.75999999999999% of 2500 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 07_eighteen_planes.txt
+Reading scenario file ./beam-planning/test_cases/07_eighteen_planes.txt
+Reading solution from stdin.
+Checking user coverage...
+98.68% of 2500 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 08_eighteen_planes_northern.txt
+Reading scenario file ./beam-planning/test_cases/08_eighteen_planes_northern.txt
+Reading solution from stdin.
+Checking user coverage...
+79.03999999999999% of 2500 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 09_ten_thousand_users.txt
+Reading scenario file ./beam-planning/test_cases/09_ten_thousand_users.txt
+Reading solution from stdin.
+Checking user coverage...
+91.93% of 10000 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 10_ten_thousand_users_geo_belt.txt
+Reading scenario file ./beam-planning/test_cases/10_ten_thousand_users_geo_belt.txt
+Reading solution from stdin.
+Checking user coverage...
+82.3% of 10000 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	No satellite self-interferes.
+Checking no sat interferes with a non-Starlink satellite...
+	No satellite interferes with a non-Starlink satellite!
+
+Solution passed all checks!
+
+Running 11_one_hundred_thousand_users.txt
+Reading scenario file ./beam-planning/test_cases/11_one_hundred_thousand_users.txt
+Reading solution from stdin.
+Checking user coverage...
+29.261% of 100000 total users covered.
+Checking each user can see their assigned satellite...
+	All users' assigned satellites are visible.
+Checking no sat interferes with itself...
+	Sat 624 beams 2 and 27 interfere.
+		Beam angle: 0.005501014798818914 degrees.
+
+real    1m22.916s
+user    1m23.623s
+sys     0m0.285s
