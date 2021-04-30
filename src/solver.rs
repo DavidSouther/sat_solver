@@ -6,12 +6,20 @@ use crate::{
 };
 
 impl Scenario {
-    // For each user, build a set of the satellites it can see.
-    // Invert the set to a map of Satellite -> User[]
-    // Pack:
-    //     Until no changes
-    //          For each band
-    //              For each satellite, add the next user that is in bounds
+    // Simple first-come-first serve packing. It hops across the bands, pulling
+    // users from a queue and assigning them to the next best satellite. The
+    // best satellite comes from find_best, below. Overall, this algorithm is
+    // O(Users * Satellites), and could be improved by improving the runtime of
+    // find_best. However, that algorithmic complexity is greatly mitigated by
+    // the stop-quick nature of Rust iterators, which will return as soon as a
+    // satellite is found. Still, it is worst case O(N^2).
+    //
+    // Future explorations would include improving the runtime of find_best
+    // perhaps by using a QuadTree sharded on lat/long of the satellite, or
+    // improving the packing efficiency for the 100k users test. However, that
+    // may required a more exhaustive search approach, including backtracking
+    // and spilling users between satellites. This naive approach works in a
+    // suprisingly (to me) good manner.
     pub fn optimize(&mut self) {
         let interferers = &self.interferers().clone();
         let mut users = self.users().clone();
@@ -19,24 +27,37 @@ impl Scenario {
         loop {
             iteration += 1;
             let start_users = users.len();
-            for band in &BANDS {
-                let band = *band;
-                for satellite in self.satellites_mut().iter_mut() {
-                    for index in (0..users.len()).rev() {
-                        let user = users[index];
-                        if satellite.can_accept(&user, band, interferers) {
-                            users.swap_remove(index);
-                            satellite.beams_mut().push(Beam::new(user, band));
-                        }
-                    }
+            BANDS.iter().for_each(|band| {
+                for index in (0..users.len()).rev() {
+                    let user = users[index];
+                    self.find_best(&user, *band, interferers).and_then(|s| {
+                        users.swap_remove(index);
+                        s.beams_mut().push(Beam::new(user, *band));
+                        Some(())
+                    });
                 }
-            }
+            });
             let users_added = start_users - users.len();
             eprintln!("Loop {} added {} users", iteration, users_added);
             if users_added == 0 || users.len() == 0 {
                 break;
             }
         }
+    }
+
+    // Find the next best satellite for the user.
+    pub fn find_best(
+        &mut self,
+        user: &Entity,
+        band: Band,
+        interferers: &Vec<Entity>,
+    ) -> Option<&mut Satellite> {
+        self.satellites_mut()
+            .iter_mut()
+            // Currently, this is the first satellite in the list which is able
+            // to accept the user. This works very well for most of the cases,
+            // though does fall apart on the 100,000 users test.
+            .find(|s| s.can_accept(&user, band, interferers))
     }
 }
 
