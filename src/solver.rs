@@ -15,7 +15,9 @@ impl Scenario {
     pub fn optimize(&mut self) {
         let interferers = &self.interferers().clone();
         let mut users = self.users().clone();
+        let mut iteration = 0;
         loop {
+            iteration += 1;
             let start_users = users.len();
             for band in &BANDS {
                 let band = *band;
@@ -30,6 +32,7 @@ impl Scenario {
                 }
             }
             let users_added = start_users - users.len();
+            eprintln!("Loop {} added {} users", iteration, users_added);
             if users_added == 0 || users.len() == 0 {
                 break;
             }
@@ -69,6 +72,9 @@ impl Satellite {
     pub fn can_accept(&self, user: &Entity, band: Band, interferers: &Vec<Entity>) -> bool {
         //  32 beams per satellite
         if self.beams().len() >= 32 {
+            false
+        // 45 degree visibility
+        } else if !user.can_see(self.entity(), 45.0) {
             false
         } else if self.beam_intersection(user, band) {
             false
@@ -124,6 +130,29 @@ sat 1 6921 0 0",
             "sat 1 beam 1 user 3 color A
 sat 1 beam 2 user 2 color A
 sat 1 beam 3 user 1 color B"
+        );
+    }
+
+    #[test]
+    fn test_00_example() {
+        let mut scenario = Scenario::from_str(
+            "user 1 6371 0 0
+sat 1 6921 0 0
+user 2 0 0 6371
+user 3 111.189281412 0 6370.02966584
+sat 2 0 0 6921
+interferer 1 -42164 0 0
+",
+        );
+
+        scenario.optimize();
+        let output = format!("{}", scenario);
+
+        assert_eq!(
+            output,
+            "sat 1 beam 1 user 1 color A
+sat 2 beam 1 user 2 color A
+sat 2 beam 2 user 3 color B"
         );
     }
 }

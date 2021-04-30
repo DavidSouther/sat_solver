@@ -55,13 +55,15 @@ impl Position {
     // Returns true if the target entity is within `angle` of self, looking
     // along a normal oriented at <0>.
     pub fn can_see(&self, target: &Position, angle: f32) -> bool {
-        let dx = target.sub(self);
-        let n = self.norm();
-        let d = Position::dot(&dx, &n);
-        let r = d; // TODO calculate r from angle
-        let dr = dx.sub(&n.scale(d)).len();
-        let b = dr < r;
-        b
+        let t = Position::dot(&self.norm(), target);
+        if t <= self.len() {
+            return false;
+        }
+        let dt = self.scale(t);
+        let h = dt.len();
+        let x = dt.sub(target).len();
+        let r = h * (angle * PI / 180.0).tan();
+        x < r
     }
 }
 
@@ -77,6 +79,8 @@ impl<'a> FromIterator<&'a str> for Position {
 
 #[cfg(test)]
 mod test {
+    use std::f32::consts::PI;
+
     use super::*;
 
     #[test]
@@ -126,9 +130,26 @@ mod test {
         let p1 = Position::new(2.0, 3.0, 0.0);
         let p2 = Position::new(-2.0, 3.0, 0.0);
         let p3 = Position::new(-2.0, -3.0, 0.0);
+        let p4 = Position::new(0.0, 0.0, 0.0);
 
         assert_eq!(x.can_see(&p1, 45.0), true);
         assert_eq!(x.can_see(&p2, 45.0), false);
         assert_eq!(x.can_see(&p3, 45.0), false);
+        assert_eq!(x.can_see(&p4, 45.0), false);
+    }
+
+    #[test]
+    fn regression_can_see() {
+        let s1 = Position::new(6921.0, 0.0, 0.0);
+        let g1 = Position::new(-5324.437140094696, -3507.3891257286095, -170.3720276523595);
+        assert_eq!(g1.can_see(&s1, 45.0), false);
+
+        let s3 = Position::new(0.0, 0.0, 2.0);
+        let g3 = Position::new(1.0, 0.0, 0.0);
+        assert_eq!(g3.can_see(&s3, 45.0), false);
+
+        let s2 = Position::new(6921.0, 0.0, 0.0);
+        let g2 = Position::new(111.189278, 0.0, 6370.02978);
+        assert_eq!(g2.can_see(&s2, 45.0), false);
     }
 }

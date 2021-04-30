@@ -1,9 +1,5 @@
 use super::position::Position;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    fmt,
-    iter::FromIterator,
-};
+use std::{fmt, iter::FromIterator};
 
 pub struct Scenario {
     users: Vec<Entity>,
@@ -20,7 +16,6 @@ pub struct Entity {
 pub struct Satellite {
     entity: Entity,
     beams: Vec<Beam>,
-    visible: Vec<Entity>,
 }
 
 pub struct Beam {
@@ -81,16 +76,6 @@ impl Satellite {
     pub fn beams_mut(&mut self) -> &mut Vec<Beam> {
         &mut self.beams
     }
-
-    pub fn visible(&self) -> &Vec<Entity> {
-        &self.visible
-    }
-
-    pub fn maybe_see_next_user(&mut self, user: &Entity) -> () {
-        if user.can_see(self.entity(), 45.0) {
-            self.visible.push(user.clone())
-        }
-    }
 }
 
 impl<'a> FromIterator<&'a str> for Satellite {
@@ -100,7 +85,6 @@ impl<'a> FromIterator<&'a str> for Satellite {
         Satellite {
             entity,
             beams: Vec::with_capacity(32),
-            visible: Vec::with_capacity(64),
         }
     }
 }
@@ -165,36 +149,6 @@ impl Scenario {
         &self.interferers
     }
 
-    pub fn build_skymap(&mut self) {
-        let users = self.users().clone();
-        users.iter().for_each(|user| {
-            self.satellites_mut()
-                .iter_mut()
-                .for_each(|s| s.maybe_see_next_user(user))
-        })
-    }
-
-    // Build a map of User IDs to a Set of satellites it can see. It can see
-    // satellites within 45' of its normal.
-    //
-    // Can be improved by first putting the satellites in a quadtree, is
-    // currently O(n^2)
-    pub fn skymap(&self) -> BTreeMap<i32, BTreeSet<i32>> {
-        self.users()
-            .iter()
-            .map(|user| {
-                (
-                    user.id(),
-                    self.satellites()
-                        .iter()
-                        .filter(|satellite| user.can_see(satellite.entity(), 45.0))
-                        .map(|s| s.entity().id())
-                        .collect(),
-                )
-            })
-            .collect()
-    }
-
     fn make() -> Scenario {
         Scenario {
             // capacities from eighteen planes scenario
@@ -239,7 +193,7 @@ impl<'a> FromIterator<&'a str> for Scenario {
 
 impl fmt::Display for Scenario {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let lines: Vec<String> = self
+        let mut lines: Vec<String> = self
             .satellites
             .iter()
             .flat_map(|satellite| {
@@ -257,6 +211,7 @@ impl fmt::Display for Scenario {
                 })
             })
             .collect();
+        lines.sort_unstable();
         write!(f, "{}", lines.join("\n"))
     }
 }
@@ -297,22 +252,5 @@ interferer 1 -42164 0 0
         assert_eq!(scenario.users.len(), 3);
         assert_eq!(scenario.satellites.len(), 2);
         assert_eq!(scenario.interferers.len(), 1);
-    }
-
-    #[test]
-    fn test_scenario_skymap() {
-        let mut scenario = Scenario::from_str(
-            "user 1 6371 0 0
-user 2 6371 10 0
-user 3 6371 400 400
-sat 1 6921 0 0
-user 4 0 0 6371
-user 5 111.189281412 0 6370.02966584
-sat 2 0 0 6921
-",
-        );
-        scenario.build_skymap();
-        assert_eq!(scenario.satellites()[0].visible().len(), 2);
-        assert_eq!(scenario.satellites()[1].visible().len(), 2);
     }
 }

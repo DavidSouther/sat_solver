@@ -1,5 +1,9 @@
 #!/bin/bash
 
-FILE="$1"
+FOLDER="./beam-planning/test_cases"
 
-cat $1 | cargo run 2>/dev/null 
+for TEST in $(ls $FOLDER) ; do 
+    echo "Running $TEST"
+    FILE="$FOLDER/$TEST"
+    cat $FILE | cargo run 2>/dev/null | python "./beam-planning/evaluate.py" "$FILE"
+done
