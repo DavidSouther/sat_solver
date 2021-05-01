@@ -1,6 +1,3 @@
-use std::{f32::consts::PI, iter::FromIterator};
-
-// ECEF Vector
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub x: f32,
@@ -49,17 +46,24 @@ impl Position {
     }
 
     pub fn norm(&self) -> Position {
-        let n = self.len();
-        self.scale(1.0 / n)
+        self.scale(1.0 / self.len())
     }
 
     pub fn scale(&self, n: f32) -> Position {
         Position::new(self.x * n, self.y * n, self.z * n)
     }
 
-    // Returns true if the target entity is within `angle` of self, looking
-    // along a normal oriented at <0>.
-    pub fn can_see(&self, target: &Position, angle: f32) -> bool {
+    // Check if `target` is visible at least `angle` degrees above the horizon.
+    // The surface is at `self` position, with a normal coming from the origin.
+    // This test checks if the target is within a cone of `angle` degrees, whose
+    // point is centered at `self` and expands along the normal. The `target`
+    // point is first projected onto the normal; if it is behind `self` on the
+    // normal the point is "behind" dishy and can't be seen. Otherwise, it
+    // checks if the distance from the point to the normal is less than the
+    // radius of the cone of `angle` degrees at that point. However, since
+    // angle is always 45 for this project, it simplifies to the radius being
+    // equal to the height on the cone.
+    pub fn can_see(&self, target: &Position) -> bool {
         let n = self.norm();
         let l = self.len();
         let t = Position::dot(&n, target);
@@ -69,18 +73,7 @@ impl Position {
         let dt = n.scale(t);
         let h = t - l;
         let x = dt.sub(target).len();
-        let r = h * (angle * PI / 180.0).tan();
-        x < r
-    }
-}
-
-impl<'a> FromIterator<&'a str> for Position {
-    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
-        let mut iter = iter.into_iter();
-        let x = iter.next().unwrap().parse::<f32>().unwrap();
-        let y = iter.next().unwrap().parse::<f32>().unwrap();
-        let z = iter.next().unwrap().parse::<f32>().unwrap();
-        Position { x, y, z }
+        x < h
     }
 }
 
@@ -117,12 +110,7 @@ mod test {
         let p1 = Position::new(1.0, 0.0, 0.0);
         let p2 = Position::new(0.0, 1.0, 0.0);
         let p3 = Position::new(0.0, 0.0, 1.0);
-
-        let o = Position {
-            x: 1.0,
-            y: 1.0,
-            z: 0.0,
-        };
+        let o = Position::new(1.0, 1.0, 0.0);
 
         assert_eq!(Position::angle(&p1, &p1), 0.0);
         assert_eq!(Position::angle(&p1, &p2), PI / 2.0);
@@ -139,33 +127,37 @@ mod test {
         let p3 = Position::new(-2.0, -3.0, 0.0);
         let p4 = Position::new(0.0, 0.0, 0.0);
 
-        assert_eq!(x.can_see(&p1, 45.0), true);
-        assert_eq!(x.can_see(&p2, 45.0), false);
-        assert_eq!(x.can_see(&p3, 45.0), false);
-        assert_eq!(x.can_see(&p4, 45.0), false);
+        assert_eq!(x.can_see(&p1), true);
+        assert_eq!(x.can_see(&p2), false);
+        assert_eq!(x.can_see(&p3), false);
+        assert_eq!(x.can_see(&p4), false);
     }
 
     #[test]
     fn regression_can_see() {
+        // Initial can_see code was problematic; several iterations with these
+        // inputs got it there.
         let s1 = Position::new(6921.0, 0.0, 0.0);
         let g1 = Position::new(-5324.437140094696, -3507.3891257286095, -170.3720276523595);
-        assert_eq!(g1.can_see(&s1, 45.0), false);
+        assert_eq!(g1.can_see(&s1), false);
 
         let s3 = Position::new(0.0, 0.0, 2.0);
         let g3 = Position::new(1.0, 0.0, 0.0);
-        assert_eq!(g3.can_see(&s3, 45.0), false);
+        assert_eq!(g3.can_see(&s3), false);
 
         let s2 = Position::new(6921.0, 0.0, 0.0);
         let g2 = Position::new(111.189278, 0.0, 6370.02978);
-        assert_eq!(g2.can_see(&s2, 45.0), false);
+        assert_eq!(g2.can_see(&s2), false);
 
         let s4 = Position::new(6921.0, 0.0, 0.0);
         let g4 = Position::new(6350.206256636249, 574.1605965872963, -160.24555276741216);
-        assert_eq!(g4.can_see(&s4, 45.0), false);
+        assert_eq!(g4.can_see(&s4), false);
     }
 
     #[test]
     fn regression_angle() {
+        // This specific pair of ground stations triggerd an f32 precision error
+        // in f32::cos, so there's a special case in angle for close to 0*
         let s = Position::new(-5111.007144121957, -1334.7360828140702, 4471.7252332817225);
         let p1 = Position::new(-4462.399898375494, -1507.4791341925356, 4286.176851267787);
         let p2 = Position::new(-4462.341423785467, -1507.5185635095902, 4286.223546883291);

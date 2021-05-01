@@ -14,6 +14,11 @@ impl Scenario {
     // the stop-quick nature of Rust iterators, which will return as soon as a
     // satellite is found. Still, it is worst case O(N^2).
     //
+    // This was originally written to loop until no changes occured, but in
+    // practice, the second iteration was never able to improve packing. This
+    // seems to be because the satellites filled up quite quickly. Removing the
+    // second iteration improves runtime.
+    //
     // Future explorations would include improving the runtime of find_best
     // perhaps by using a QuadTree sharded on lat/long of the satellite, or
     // improving the packing efficiency for the 100k users test. However, that
@@ -23,26 +28,18 @@ impl Scenario {
     pub fn optimize(&mut self) {
         let interferers = &self.interferers().clone();
         let mut users = self.users().clone();
-        let mut iteration = 0;
-        loop {
-            iteration += 1;
-            let start_users = users.len();
-            BANDS.iter().for_each(|band| {
-                for index in (0..users.len()).rev() {
-                    let user = users[index];
-                    self.find_best(&user, *band, interferers).and_then(|s| {
-                        users.swap_remove(index);
-                        s.beams_mut().push(Beam::new(user, *band));
-                        Some(())
-                    });
-                }
-            });
-            let users_added = start_users - users.len();
-            eprintln!("Loop {} added {} users", iteration, users_added);
-            if users_added == 0 || users.len() == 0 {
-                break;
+        let start_users = users.len();
+        BANDS.iter().for_each(|band| {
+            for index in (0..users.len()).rev() {
+                let user = users[index];
+                self.find_best(&user, *band, interferers).and_then(|s| {
+                    users.swap_remove(index);
+                    s.beams_mut().push(Beam::new(user, *band));
+                    Some(())
+                });
             }
-        }
+        });
+        eprintln!("Assigned {} users", start_users - users.len());
     }
 
     // Find the next best satellite for the user.
@@ -95,7 +92,7 @@ impl Satellite {
         if self.beams().len() >= 32 {
             false
         // 45 degree visibility
-        } else if !user.can_see(self.entity(), 45.0) {
+        } else if !user.position().can_see(self.entity().position()) {
             false
         } else if self.beam_intersection(user, band) {
             false

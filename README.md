@@ -25,6 +25,7 @@ final piece is `solver`, which adds an `optimize` method to `Scenario`, as well
 as utilities for packing and constraints. Comments on the algorithm are inline.
 
 ## Sample Run Summary
+    Running on a Github Codespaces VM; 2.7Ghz 4 core CPU / 8GB ram
 
     Running 00_example.txt
     100.0% of 3 total users covered.
@@ -75,6 +76,6 @@ as utilities for packing and constraints. Comments on the algorithm are inline.
     Solution passed all checks!
 
     time run.sh
-    real    1m13.728s
-    user    1m14.414s
-    sys     0m0.263s
+    real    0m46.404s
+    user    0m46.944s
+    sys     0m0.328s

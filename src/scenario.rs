@@ -33,98 +33,16 @@ pub enum Band {
 
 pub const BANDS: [Band; 4] = [Band::A, Band::B, Band::C, Band::D];
 
-impl Entity {
-    pub fn id(&self) -> i32 {
-        self.id
-    }
-
-    pub fn position(&self) -> &Position {
-        &self.position
-    }
-
-    // Returns true if the target entity is within `angle` of self, looking
-    // along a normal oriented at <0>.
-    pub fn can_see(&self, target: &Entity, angle: f32) -> bool {
-        self.position().can_see(target.position(), angle)
-    }
-}
-
-impl<'a> FromIterator<&'a str> for Entity {
-    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
-        let mut iter = iter.into_iter();
-        let id = iter.next().unwrap().parse::<i32>().unwrap();
-        let position: Position = iter.collect();
-        Entity { id, position }
-    }
-}
-
-impl fmt::Display for Entity {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.id)
-    }
-}
-
-impl Satellite {
-    pub fn entity(&self) -> &Entity {
-        &self.entity
-    }
-
-    pub fn beams(&self) -> &Vec<Beam> {
-        &self.beams
-    }
-
-    pub fn beams_mut(&mut self) -> &mut Vec<Beam> {
-        &mut self.beams
-    }
-}
-
-impl<'a> FromIterator<&'a str> for Satellite {
-    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
-        let iter = iter.into_iter();
-        let entity: Entity = iter.collect();
-        Satellite {
-            entity,
-            beams: Vec::with_capacity(32),
+impl Scenario {
+    fn new() -> Scenario {
+        Scenario {
+            // capacities from eighteen planes scenario
+            users: Vec::with_capacity(2500),
+            satellites: Vec::with_capacity(360),
+            interferers: Vec::with_capacity(50),
         }
     }
-}
 
-impl fmt::Display for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.entity.id)
-    }
-}
-
-impl Beam {
-    pub fn new(user: Entity, band: Band) -> Beam {
-        Beam { user, band }
-    }
-
-    pub fn user(&self) -> &Entity {
-        &self.user
-    }
-
-    pub fn band(&self) -> Band {
-        self.band
-    }
-}
-
-impl fmt::Display for Band {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Band::A => "A",
-                Band::B => "B",
-                Band::C => "C",
-                Band::D => "D",
-            }
-        )
-    }
-}
-
-impl Scenario {
     pub fn from_str(s: &str) -> Scenario {
         s.lines().collect()
     }
@@ -145,15 +63,6 @@ impl Scenario {
         &self.interferers
     }
 
-    fn make() -> Scenario {
-        Scenario {
-            // capacities from eighteen planes scenario
-            users: Vec::with_capacity(2500),
-            satellites: Vec::with_capacity(360),
-            interferers: Vec::with_capacity(50),
-        }
-    }
-
     fn add_line(&mut self, line: &str) {
         let mut parts = line.split_whitespace();
         match parts.next() {
@@ -167,9 +76,47 @@ impl Scenario {
     }
 }
 
+impl Entity {
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+
+    pub fn position(&self) -> &Position {
+        &self.position
+    }
+}
+
+impl Satellite {
+    pub fn entity(&self) -> &Entity {
+        &self.entity
+    }
+
+    pub fn beams(&self) -> &Vec<Beam> {
+        &self.beams
+    }
+
+    pub fn beams_mut(&mut self) -> &mut Vec<Beam> {
+        &mut self.beams
+    }
+}
+
+impl Beam {
+    pub fn new(user: Entity, band: Band) -> Beam {
+        Beam { user, band }
+    }
+
+    pub fn user(&self) -> &Entity {
+        &self.user
+    }
+
+    pub fn band(&self) -> Band {
+        self.band
+    }
+}
+
 impl FromIterator<String> for Scenario {
     fn from_iter<I: IntoIterator<Item = String>>(iter: I) -> Self {
-        let mut scenario = Scenario::make();
+        let mut scenario = Scenario::new();
         for line in iter {
             scenario.add_line(line.as_str())
         }
@@ -179,11 +126,41 @@ impl FromIterator<String> for Scenario {
 
 impl<'a> FromIterator<&'a str> for Scenario {
     fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
-        let mut scenario = Scenario::make();
+        let mut scenario = Scenario::new();
         for line in iter {
             scenario.add_line(line)
         }
         scenario
+    }
+}
+
+impl<'a> FromIterator<&'a str> for Entity {
+    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
+        let mut iter = iter.into_iter();
+        let id = iter.next().unwrap().parse::<i32>().unwrap();
+        let position: Position = iter.collect();
+        Entity { id, position }
+    }
+}
+
+impl<'a> FromIterator<&'a str> for Position {
+    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
+        let mut iter = iter.into_iter();
+        let x = iter.next().unwrap().parse::<f32>().unwrap();
+        let y = iter.next().unwrap().parse::<f32>().unwrap();
+        let z = iter.next().unwrap().parse::<f32>().unwrap();
+        Position { x, y, z }
+    }
+}
+
+impl<'a> FromIterator<&'a str> for Satellite {
+    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let entity: Entity = iter.collect();
+        Satellite {
+            entity,
+            beams: Vec::with_capacity(32),
+        }
     }
 }
 
@@ -209,6 +186,33 @@ impl fmt::Display for Scenario {
             .collect();
         lines.sort_unstable();
         write!(f, "{}", lines.join("\n"))
+    }
+}
+
+impl fmt::Display for Entity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.id)
+    }
+}
+
+impl fmt::Display for Satellite {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.entity.id)
+    }
+}
+
+impl fmt::Display for Band {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Band::A => "A",
+                Band::B => "B",
+                Band::C => "C",
+                Band::D => "D",
+            }
+        )
     }
 }
 
