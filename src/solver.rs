@@ -141,13 +141,11 @@ user 3 6371 400 400
 sat 1 6921 0 0",
         );
         scenario.optimize();
-        assert_eq!(scenario.satellites()[0].beams().len(), 3);
         let output = format!("{}", scenario);
         assert_eq!(
             output,
-            "sat 1 beam 1 user 3 color A
-sat 1 beam 2 user 2 color A
-sat 1 beam 3 user 1 color B"
+            "sat 1 beam 1 user 2 color A
+sat 1 beam 2 user 1 color B"
         );
     }
 
@@ -169,8 +167,8 @@ interferer 1 -42164 0 0
         assert_eq!(
             output,
             "sat 1 beam 1 user 1 color A
-sat 2 beam 1 user 2 color A
-sat 2 beam 2 user 3 color B"
+sat 2 beam 1 user 3 color A
+sat 2 beam 2 user 2 color A"
         );
     }
 

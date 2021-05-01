@@ -43,10 +43,6 @@ impl Scenario {
         }
     }
 
-    pub fn from_str(s: &str) -> Scenario {
-        s.lines().collect()
-    }
-
     pub fn users(&self) -> &Vec<Entity> {
         &self.users
     }
@@ -219,6 +215,12 @@ impl fmt::Display for Band {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    impl Scenario {
+        pub fn from_str(s: &str) -> Scenario {
+            s.lines().collect()
+        }
+    }
 
     #[test]
     fn test_build_entity() {
