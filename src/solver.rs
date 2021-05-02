@@ -39,7 +39,8 @@ impl Scenario {
                 });
             }
         });
-        eprintln!("Assigned {} users", start_users - users.len());
+        self.assigned = start_users - users.len();
+        eprintln!("Assigned {} users", self.assigned);
     }
 
     // Find the next best satellite for the user.

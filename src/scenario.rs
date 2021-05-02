@@ -5,6 +5,7 @@ pub struct Scenario {
     users: Vec<Entity>,
     satellites: Vec<Satellite>,
     pub interferers: Vec<Entity>,
+    pub assigned: usize,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -40,6 +41,7 @@ impl Scenario {
             users: Vec::with_capacity(2500),
             satellites: Vec::with_capacity(360),
             interferers: Vec::with_capacity(50),
+            assigned: 0,
         }
     }
 
