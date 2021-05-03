@@ -38,7 +38,6 @@ impl Position {
         a.x * b.x + a.y * b.y + a.z * b.z
     }
 
-    #[allow(dead_code)]
     pub fn angle_origin(a: &Position, b: &Position, o: &Position) -> f32 {
         Position::angle(&a.sub(o), &b.sub(o))
     }
@@ -75,6 +74,7 @@ impl Position {
     // radius of the cone of `angle` degrees at that point. However, since
     // angle is always 45 for this project, it simplifies to the radius being
     // equal to the height on the cone.
+    #[allow(dead_code)]
     pub fn can_see_cone(&self, target: &Position) -> bool {
         let n = self.norm();
         let l = self.len();
@@ -88,26 +88,22 @@ impl Position {
         x < h
     }
 
-    #[allow(dead_code)]
     pub fn can_see_sat(&self, target: &Position) -> bool {
         // A copy of the version used in evaluate. This approach was not my
         // first attempt, but I'm glad I took the time to break it apart and
         // understand it. From my approach, I was trying to see if the user
         // could see the satellite, which resulted in the cone-intersection
         // approach. The angle calculation in the evaluate script flips this,
-        // by instead checking if the angle from the satellite between the
-        // ground and the origin is less than ?? degrees.
-        //
-        // I still don't entirely grok it, probably missing a conversion step
-        // along the way somewhere in evalute.
-        let r = Position::angle_origin(self, &ORIGIN, target);
+        // by instead checking if the angle from the satellite to the origin via
+        // the ground is more than 135 degrees (the obtuse of 45).
+        let r = Position::angle_origin(&ORIGIN, target, self);
 
         let k = r * 180.0 / PI;
         k > 180.0 - 45.0
     }
 
     pub fn can_see(&self, target: &Position) -> bool {
-        self.can_see_cone(target)
+        self.can_see_sat(target)
     }
 }
 
