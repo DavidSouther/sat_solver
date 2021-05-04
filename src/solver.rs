@@ -1,6 +1,5 @@
 #[cfg(feature = "elevation")]
 use std::cmp::Ordering;
-use std::f32::consts::PI;
 
 #[cfg(feature = "elevation")]
 use crate::position::ORIGIN;
@@ -97,7 +96,9 @@ impl Satellite {
                         self.entity().position(),
                         user.position(),
                         beam.user().position(),
-                    ) <= 10.0 * PI / 180.0
+                    )
+                    .to_degrees()
+                        <= 10.0
             })
             .any(|s| s)
     }
@@ -110,7 +111,9 @@ impl Satellite {
                     user.position(),
                     self.entity().position(),
                     interferer.position(),
-                ) <= 20.0 * PI / 180.0
+                )
+                .to_degrees()
+                    <= 20.0
                 // > 20* from non-starlink sats
             })
             .any(|s| s)

@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub x: f32,
@@ -96,10 +94,7 @@ impl Position {
         // approach. The angle calculation in the evaluate script flips this,
         // by instead checking if the angle from the satellite to the origin via
         // the ground is more than 135 degrees (the obtuse of 45).
-        let r = Position::angle_origin(&ORIGIN, target, self);
-
-        let k = r * 180.0 / PI;
-        k > 180.0 - 45.0
+        Position::angle_origin(&ORIGIN, target, self).to_degrees() > 135.0
     }
 
     pub fn can_see(&self, target: &Position) -> bool {

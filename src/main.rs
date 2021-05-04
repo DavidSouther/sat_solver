@@ -7,6 +7,8 @@ mod position;
 mod scenario;
 mod solver;
 
+use position::{Position, ORIGIN};
+
 use crate::scenario::Scenario;
 
 fn main() {
@@ -27,7 +29,7 @@ fn main() {
     scenario.optimize();
     println!("{}", scenario);
 
-    #[cfg(analysis)]
+    #[cfg(feature = "analysis")]
     {
         let analysis = scenario.analyze();
         eprintln!("Analysis: ");
@@ -44,6 +46,7 @@ struct Analysis<'a> {
     max_possible_utilization: f32, // max_possible / number of users
     uncovered: usize,
     max_visible_utilization: f32, // max_possible / (number of users - uncovered users)
+    average_elevation: f32,
 }
 
 #[cfg(feature = "analysis")]
@@ -73,6 +76,7 @@ impl Scenario {
             max_possible_utilization: 0.0,
             uncovered: 0,
             max_visible_utilization: 0.0,
+            average_elevation: 0.0,
         };
 
         // Count number of saturated satelites, number of unassigned satellites,
@@ -106,6 +110,20 @@ impl Scenario {
             / analysis.max_possible as f32)
             .min(1.0);
 
+        let (sum, count) = self
+            .satellites()
+            .iter()
+            .flat_map(|s| {
+                s.beams().iter().map(move |b| {
+                    Position::angle_origin(&ORIGIN, &s.entity().position(), &b.user().position())
+                        .to_degrees()
+                        - 90.0
+                })
+            })
+            .fold((0.0, 0), |(sum, count), angle| (sum + angle, count + 1));
+
+        analysis.average_elevation = sum / (count as f32);
+
         analysis
     }
 }
@@ -132,6 +150,11 @@ impl<'a> fmt::Display for Analysis<'a> {
             f,
             "\tSolution is overall {:4}% successful, given visiblity and capacity",
             self.success() * 100.0
+        )?;
+        writeln!(
+            f,
+            "\tAverage dishy elevation is {:4} deg",
+            self.average_elevation
         )?;
         Ok(())
     }
