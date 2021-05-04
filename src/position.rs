@@ -8,7 +8,7 @@ pub struct Position {
 }
 
 #[allow(dead_code)]
-const ORIGIN: Position = Position {
+pub const ORIGIN: Position = Position {
     x: 0.0,
     y: 0.0,
     z: 0.0,

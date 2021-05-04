@@ -1,7 +1,7 @@
-use std::{
-    fmt,
-    io::{self, BufRead},
-};
+use std::io::{self, BufRead};
+
+#[cfg(feature = "analysis")]
+use std::fmt;
 
 mod position;
 mod scenario;
@@ -27,11 +27,15 @@ fn main() {
     scenario.optimize();
     println!("{}", scenario);
 
-    let analysis = scenario.analyze();
-    eprintln!("Analysis: ");
-    eprintln!("{}", analysis);
+    #[cfg(analysis)]
+    {
+        let analysis = scenario.analyze();
+        eprintln!("Analysis: ");
+        eprintln!("{}", analysis);
+    }
 }
 
+#[cfg(feature = "analysis")]
 struct Analysis<'a> {
     scenario: &'a Scenario,
     saturated: i32,
@@ -42,6 +46,7 @@ struct Analysis<'a> {
     max_visible_utilization: f32, // max_possible / (number of users - uncovered users)
 }
 
+#[cfg(feature = "analysis")]
 impl<'a> Analysis<'a> {
     // % of max utilization achieved;
     fn success(&self) -> f32 {
@@ -52,6 +57,7 @@ impl<'a> Analysis<'a> {
     }
 }
 
+#[cfg(feature = "analysis")]
 impl Scenario {
     // % of users assigned
     fn utilization(&self) -> f32 {
@@ -104,6 +110,7 @@ impl Scenario {
     }
 }
 
+#[cfg(feature = "analysis")]
 impl<'a> fmt::Display for Analysis<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "\t{} satellites are saturated", self.saturated)?;

@@ -1,5 +1,9 @@
+#[cfg(feature = "elevation")]
+use std::cmp::Ordering;
 use std::f32::consts::PI;
 
+#[cfg(feature = "elevation")]
+use crate::position::ORIGIN;
 use crate::{
     position::Position,
     scenario::{Band, Beam, Entity, Satellite, Scenario, BANDS},
@@ -43,7 +47,7 @@ impl Scenario {
         eprintln!("Assigned {} users", self.assigned);
     }
 
-    // Find the next best satellite for the user.
+    #[cfg(feature = "first")]
     pub fn find_best(
         &mut self,
         user: &Entity,
@@ -52,10 +56,34 @@ impl Scenario {
     ) -> Option<&mut Satellite> {
         self.satellites_mut()
             .iter_mut()
-            // Currently, this is the first satellite in the list which is able
-            // to accept the user. This works very well for most of the cases,
-            // though does fall apart on the 100,000 users test.
-            .find(|s| s.can_accept(&user, band, interferers))
+            .filter(|s| s.can_accept(&user, band, interferers))
+            .next()
+    }
+
+    // Find the next best satellite for the user.
+    #[cfg(feature = "elevation")]
+    pub fn find_best(
+        &mut self,
+        user: &Entity,
+        band: Band,
+        interferers: &Vec<Entity>,
+    ) -> Option<&mut Satellite> {
+        let position = &user.position();
+        self.satellites_mut()
+            .iter_mut()
+            .filter(|s| s.can_accept(&user, band, interferers))
+            .max_by(|a, b| {
+                let angle_a = Position::angle_origin(&ORIGIN, a.entity().position(), position);
+                let angle_b = Position::angle_origin(&ORIGIN, b.entity().position(), position);
+                // angleA.cmp(angleB)
+                if angle_a < angle_b {
+                    Ordering::Less
+                } else if angle_a > angle_b {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                }
+            })
     }
 }
 
