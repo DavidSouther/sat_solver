@@ -1,0 +1,380 @@
+= Beam Planner
+David Souther
+
+:imagesdir: images
+:sectids!:
+:experimental:
+
+== Core Algorithm
+
+* Packing optimization problem, NP complete
+* Naive solution is simple packing, Works surprisingly well
+* `find_best_satellite` encapsulates and isolates the hard(1) part
+* Loop until no changes to user set 
+  * For each color band
+    * For each user in set 
+      * Find first eligible satellite
+        * If there is an elligible satellite
+          * Assign user to next beam & remove from set
+* (1) There's a second hard part that could involve "spilling" from one satellite to another, see optimizations later
+
+== Technology Considerations
+[.columns-2]
+--
+More Important
+* Fast iteration
+* Readable constructs
+--
+Less Important
+* Memory Safety
+* Threading
+
+== Technology Decision
+
+Shortlist of languages I have spent more than ~10 minutes with in the past year
+
+* Python
+  * + Iterators
+  * + Relatively Readable
+  * - Some memory & interpreter overhead
+* Typescript
+  * ~ Iterables, but mostly just arrays
+  * - Memory & interpreter overhead
+  * - Significant project setup
+* Java
+  * - Makes TypeScript setup look like bash
+* F#
+  * + Iterables
+  * + Legible Immutable structs are easy
+  * - dotnet either works or it doesn't
+* Rust
+  * + Fast Iterators
+  * + Idiomatic Iterators
+  * + Minimal memory overhead
+  * + Trivial setup
+
+Decision: Rust
+
+== Supporting Components
+
+* Algorithm needs to parse input
+* Format output
+* Measure angles between points in 3-space
+
+=== Parsing
+
+* Data is well structures
+* #... for comment lines
+* user ... for users
+* sat ... for Starlink
+* interferer ... for others
+* All entities are id <position>
+* position is float float float
+
+=== Read & Parse
+
+* Get Lines over input stream
+* Ignore lines starting with #
+* Add other lines based on entity type 
+* trait FromIterator makes creating an entity-specific parser dead simple
+* Review FromIterator implementations in scenario.rs
+* Usage is brilliantly simple: `a: FromIterType = iter<&str>.collect()
+
+=== Formatting
+
+* Once again, the Display trait is brilliant
+* Better separation of concerns than overriding `toString` or implementing `__repr__`
+* Review Display implementations in scenario.rs
+
+=== Position Geometry
+
+* As presented, "simple" spatial problems
+* Beam angles 10* minimum; interference 20* minimum, satellite 45* altitude
+* Position geometry needs an `angle` method
+* Angle(a, b) returns the angle from a through the origin to b
+* Angle(a, b, o) returns the angle from a through o to b 
+* Cosine of angle through origin is dot product of a and b
+* Used in beam angle calculations
+
+==== can_see conic
+
+* Initial "Can See" implementation
+* Hung up on "angle above the horizon"
+* Calculates whether the satellite is within a cone originating from the ground
+* First projects satellite onto normal through ground
+* Checks if above or below the horizon at all (t > 0)
+* Checks if distance from satellite to normal is less than radius of cone at height
+* Has a failing test satellite?
+* Debugging regression test has acos<f32>(1.000065) returning NaN
+* Special case for r~=1
+
+==== can_see angle
+
+* "Decompiled" the evaluator script
+* Saw that it used the angle calculation
+* Obviously it's not GOS
+* Tried to get the angle calculation working on GSO, but it wasn't quite right
+* Had other things to do, and was otherwise done with the solution
+* Went to bed
+* Bolted awake at 5am realizing _tri_angles have _three_ corners
+* Changed it SGO < 135*, worked fine
+
+== Algorithm, Implemented
+
+=== Satellite can_accept
+
+* A satellite can accept a user if
+* < 32 users assigned
+* No self interference
+* No other interference
+
+=== self interference
+
+* For all beams
+  * assert angle from current user to satellite to attempted user is less than 10
+* Review code in solver.rs
+
+=== other interference
+
+* For all interferers
+  * assert angle from satellite to attempted user to interferer is less than 20
+* Review code in solver.rs
+
+=== find_best
+
+* Actually just finds first which meets these criteria
+* Review code in solver.rs
+
+=== optimize
+
+* This algorithm needs to iterate over all band colors, all users, and all satellites.
+* Choosing the order has implications for the algorithm's shape
+* iterating users should be done against a mutable list, to remove users after
+  they have been assigned.
+  * If speed were a problem, removing full satellites might also be a good idea
+  * Running quickly enough I didn't think that was worth the effort
+* Should we go by user then satellite, or satellite then user?
+  * Based on the decision for a `find_best`, it made sense to go user then satellite
+* Should we do band outermost or inner most?
+  * Band is most constant, so it was intuitive to put it outside.
+  * This wasn't really a "decision" so much as a "eh, band feels least important"
+  * In practice, this means that the A band is chosen preferentially, the D band irregularly.
+  * From the prompt, this is fine. Does this meet the reality of the satellites?
+* Overall runtime is O(C N M), where C = 4 bands, N = users, M = satellites
+  * I'm calling it O(N^2)
+* Review code in solver.rs
+
+== First pass / it works
+
+* Passes all checks
+* Runs seconds, not minutes
+* For simple tests, hits max coverage given eg cross pattern
+* For common cases, >90% "felt good"
+* For extreme cases, it worked
+* 8 hours of development over two evenings
+  * (with a compilers midterm in the middle)
+* Met all the requirements
+* Send it in
+
+== Second pass / weekend downtime
+
+* 1440 satellites obviously cannot serve 100k users on 32 beams
+  * 46,080 < 100,000
+* 20% feels like it might actually be pretty good?
+* Do other scenarios even have 100% coverage possible?
+* Let's write an analysis pass!
+
+=== Analysis questions
+
+* How many satellites are completely saturated?
+* How many satellites have no users assigned?
+* How many users could this many satellites maximally serve?
+* Given that number, what percentage of those were served?
+* How many users were uncovered?
+* Given the number of uncovered users, and the maximum satellite capacity, how good was the solution?
+
+=== Analysis not-questions
+
+* Are there clusters of users within the network that overwhelm local capacity?
+  * Does the example 3 five users or exmple 4 one interferer occur in the data set?
+  * Does a cluster of, say, 49 (7x7 grid) of users fall underneath a single satellite?
+* These would again reduce the available capacity, but are complex enough I didn't feel like doing them over the weekend without knowing whether I'd be moving forward with another interview.
+
+=== Results
+
+|===
+| Test case | % Assigned | % Successful
+
+| 08_eighteen_planes_northern.txt
+| 79.08%
+| 79.08% 
+
+| 09_ten_thousand_users.txt
+| 91.94%
+| 97.75%
+
+| 10_ten_thousand_users_geo_belt.txt
+| 82.4%
+| 87.46%
+
+| 11_one_hundred_thousand_users.txt
+| 29.25%
+| 63.49%
+|===
+
+==== 08_eighteen_planes_northern.txt
+        53 satellites are saturated
+        254 satellites are unassigned
+        A most, 2500 users can be served ( 100%)
+                Current solution covered 1977 (79.079994%)
+        0 users are completeley uncovered
+        Solution is overall 79.079994% successful, given visiblity and capacity
+
+==== 09_ten_thousand_users.txt
+        101 satellites are saturated
+        360 satellites are unassigned
+        A most, 10000 users can be served ( 100%)
+                Current solution covered 9194 (91.939995%)
+        594 users are completeley uncovered
+        Solution is overall 97.746124% successful, given visiblity and capacity
+
+==== 10_ten_thousand_users_geo_belt.txt
+    104 satellites are saturated
+    360 satellites are unassigned
+    A most, 10000 users can be served ( 100%)
+        Current solution covered 8240 (82.4%)
+    579 users are completeley uncovered
+    Solution is overall 87.46418% successful, given visiblity and capacity
+
+==== 11_one_hundred_thousand_users.txt
+    650 satellites are saturated
+    11 satellites are unassigned
+    A most, 46080 users can be served (46.079998%)
+            Current solution covered 29251 (29.251%)
+    26535 users are completeley uncovered
+    Solution is overall 63.478733% successful, given visiblity and capacity
+
+=== Results (recap)
+|===
+| Test case | % Assigned | % Successful
+
+| 08_eighteen_planes_northern.txt
+| 79.08%
+| 79.08% 
+
+| 09_ten_thousand_users.txt
+| 91.94%
+| 97.75%
+
+| 10_ten_thousand_users_geo_belt.txt
+| 82.4%
+| 87.46%
+
+| 11_one_hundred_thousand_users.txt
+| 29.25%
+| 63.49%
+|===
+
+== Next Steps
+
+=== Improve find_best
+
+* By adding a heuristic, it may be possible to improve locallity of possible matches
+* The more directly overhead the satellite, the better the beam (and lower chance of obstruction)
+* Maybe find the next available satellite with the highest elevation?
+* (This approach does not appreciably improve the solution, and adds ~10% to the runtime )
+* (That might still be a good thing, average elevation is improved by 3 degrees)
+
+=== spilling
+
+* Using the metric above, when a ground station finds a very good satellite
+  * the lower quality beam could be pushed to neighboring satellites
+* This might result in that satellite spilling another connection
+  * at worst case, it trades one "good" connection for one "bad" connection
+* In a worst case, this becomes O(N*M*M), as we "spill" down a waterfal
+  * In practice, this would more likely be O(NMrtM)
+
+== Improving the network
+
+=== Baseline
+
+* 1440 satellites with 32 beams at 10* separation
+  Assigned 29243 users
+    Analysis: 
+        649 satellites are saturated
+        0 satellites are unassigned
+        A most, 46080 users can be served (46.079998%)
+                Current solution covered 29243 (29.243002%)
+        26535 users are completeley uncovered
+        Solution is overall 63.461376% successful, given visiblity and capacity
+        Average dishy elevation is 59.14712 deg
+
+=== More beams
+
+* Increase from 32 to 64 Beams roughly doubles capacity:
+    Assigned 46049 users
+    Analysis: 
+        1 satellites are saturated
+        0 satellites are unassigned
+        A most, 92160 users can be served (92.159996%)
+                Current solution covered 46049 (46.049%)
+        26535 users are completeley uncovered
+        Solution is overall 57.767315% successful, given visiblity and capacity
+        Average dishy elevation is 59.105156 deg
+
+=== Tighter Beams
+
+* Decrease from 10* to 5* :
+    Analysis: 
+        669 satellites are saturated
+        0 satellites are unassigned
+        A most, 46080 users can be served (46.079998%)
+                Current solution covered 29559 (29.559002%)
+        26535 users are completeley uncovered
+        Solution is overall 64.14714% successful, given visiblity and capacity
+        Average dishy elevation is 59.914295 deg
+
+=== More Tighter Beams
+
+* 64 5* beams:
+    Assigned 47094 users
+    Analysis: 
+        3 satellites are saturated
+        0 satellites are unassigned
+        A most, 92160 users can be served (92.159996%)
+                Current solution covered 47094 (47.093998%)
+        26535 users are completeley uncovered
+        Solution is overall 59.07824% successful, given visiblity and capacity
+        Average dishy elevation is 59.525055 deg
+
+=== More satellites
+
+* Fill in shells from FTC filing
+  * On the one hand, you guys have spent way more time thinking about this than I have
+  * On the other, this is basically the same principles I put together in KSP
+* 1440 to 2880:
+  * 1440 satellites in 72 orbits, evenly spaced along the orbit, orbits with 5* increasing LAN, at 540km, 53.2* inclination
+
+* 2880 to 3600
+  * 720 in a 570 km (350 mi) shell at 70º inclination (40 / orbit, 36 orbits)
+  * Fourth shell: 336 in a 560 km (350 mi) shell at 97.6º (56 / orbit, 6 orbits)
+  * Fifth shell: 172 satellites in a 560 km (350 mi) shell at 97.6º (43 / orbit, 4 orbits)
+
+
+    Read scenario
+        100000 users
+        2880 sats
+        36 interferrers
+    Assigned 43238 users
+    Analysis: 
+        1006 satellites are saturated
+        589 satellites are unassigned
+        A most, 92160 users can be served (92.159996%)
+                Current solution covered 43238 (43.238%)
+        18198 users are completeley uncovered
+        Solution is overall 48.712914% successful, given visiblity and capacity
+        Average dishy elevation is 59.691757 deg
+
+    real    2m33.415s
+    user    2m32.892s
+    sys     0m0.209s

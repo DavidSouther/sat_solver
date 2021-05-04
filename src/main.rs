@@ -8,6 +8,7 @@ mod scenario;
 mod solver;
 
 use position::{Position, ORIGIN};
+use solver::BEAMS;
 
 use crate::scenario::Scenario;
 
@@ -103,7 +104,7 @@ impl Scenario {
             })
             .count();
 
-        analysis.max_possible = (self.satellites().len() * 32).min(self.users().len());
+        analysis.max_possible = (self.satellites().len() * BEAMS).min(self.users().len());
         analysis.max_possible_utilization =
             analysis.max_possible as f32 / self.users().len() as f32;
         analysis.max_visible_utilization = ((self.users().len() - analysis.uncovered) as f32

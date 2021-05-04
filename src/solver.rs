@@ -8,6 +8,9 @@ use crate::{
     scenario::{Band, Beam, Entity, Satellite, Scenario, BANDS},
 };
 
+pub const BEAMS: usize = 32;
+pub const BEAM_ANGLE: f32 = 10.0;
+
 impl Scenario {
     // Simple first-come-first serve packing. It hops across the bands, pulling
     // users from a queue and assigning them to the next best satellite. The
@@ -98,7 +101,7 @@ impl Satellite {
                         beam.user().position(),
                     )
                     .to_degrees()
-                        <= 10.0
+                        <= BEAM_ANGLE
             })
             .any(|s| s)
     }
@@ -121,7 +124,7 @@ impl Satellite {
 
     pub fn can_accept(&self, user: &Entity, band: Band, interferers: &Vec<Entity>) -> bool {
         //  32 beams per satellite
-        if self.beams().len() >= 32 {
+        if self.beams().len() >= BEAMS {
             false
         // 45 degree visibility
         } else if !user.position().can_see(self.entity().position()) {
