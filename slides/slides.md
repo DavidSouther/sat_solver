@@ -11,14 +11,14 @@ David Souther
 
 * Packing optimization problem, NP complete
 * Naive solution is simple packing, Works surprisingly well
-* `find_best_satellite` encapsulates and isolates the hard(1) part
+* `find_best_satellite` encapsulates and isolates the hard\* part
 * Loop until no changes to user set 
   * For each color band
     * For each user in set 
       * Find first eligible satellite
         * If there is an elligible satellite
           * Assign user to next beam & remove from set
-* (1) There's a second hard part that could involve "spilling" from one satellite to another, see optimizations later
+* \* There's a second hard part that could involve "spilling" from one satellite to another, see optimizations later
 
 ---
 
@@ -225,6 +225,7 @@ Decision: Rust
   * 46,080 < 100,000
 * 20% feels like it might actually be pretty good?
 * Do other scenarios even have 100% coverage possible?
+* Anyway, we need to get to a million users in the near future
 * Let's write an analysis pass!
 
 ---
@@ -316,8 +317,8 @@ Decision: Rust
 
 * Adding a satellite should only add at most O(logN) to the runtime
 * Choose best satellite by spatial partitioning
-* Quadtree for most overhead?
-* Uber H3?
+* Quadtree for most overhead? Uber H3?
+* Threading per geospatioal region?
 
 ---
 
