@@ -141,8 +141,6 @@ Decision: Rust
 * Saw that it used the angle calculation
 * Obviously it's not GOS
 * Tried to get the angle calculation working on GSO, but it wasn't quite right
-* Had other things to do, and was otherwise done with the solution
-* Went to bed
 * Bolted awake at 5am realizing _tri_angles have _three_ corners
 * Changed it SGO < 135&deg;, worked fine
 
@@ -197,7 +195,6 @@ Decision: Rust
 ### [optimize](https://github.com/DavidSouther/spacex_interview/blob/7fa7/src/solver.rs#L28-L43)
 * Should we do band outermost or inner most?
   * Band is most constant, so it was intuitive to put it outside.
-  * This wasn't really a "decision" so much as a "eh, band feels least important"
   * In practice, this means that the A band is chosen preferentially, the D band irregularly.
   * From the prompt, this is fine. Does this meet the reality of the satellites?
 * Overall runtime is O(C N M), where C # 4 bands, N # users, M # satellites
@@ -213,7 +210,6 @@ Decision: Rust
 * For common cases, >90% "felt good"
 * For extreme cases, it worked
 * 8 hours of development over two evenings
-  * (with a compilers midterm in the middle)
 * Met all the requirements
 * Send it in
 
@@ -246,7 +242,8 @@ Decision: Rust
 * Are there clusters of users within the network that overwhelm local capacity?
   * Does the example 3 five users or exmple 4 one interferer occur in the data set?
   * Does a cluster of, say, 49 (7x7 grid) of users fall underneath a single satellite?
-* These would again reduce the available capacity, but are complex enough I didn't feel like doing them over the weekend without knowing whether I'd be moving forward with another interview.
+* These would again reduce the available capacity
+
 * [code](https://github.com/DavidSouther/spacex_interview/blob/main/src/main.rs#L35-L43)
 
 ---
@@ -391,7 +388,7 @@ Analysis:
 
 ### Timesliced Beams
 
-* By reducing bandwidth, we can time slice beams for nearby users.
+* By reducing bandwidth, beams can time slice for nearby users.
 * Each color gets divided into ??? bands (I don't know the bandwidth of a channel)
 * Most of the time, most users aren't both talking, so can preferentially give users more time when others are quiet
 
