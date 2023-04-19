@@ -1,4 +1,4 @@
-# SpaceX Interview - Beam Planning
+# Sat Solver
 
 This code implements a naive O(N^2) beam planning algorithm for the
 specification provided in the Text Test pdf - namely, beams are assigned to user
